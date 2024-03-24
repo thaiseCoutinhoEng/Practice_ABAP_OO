@@ -1,0 +1,32 @@
+REPORT ztributos_oo.
+
+CLASS lcl_loucutor DEFINITION.
+  PUBLIC SECTION.
+    CLASS-DATA:
+      _instancia TYPE REF TO lcl_loucutor,
+      _nome      TYPE string.
+
+    DATA:
+      nome            TYPE string,
+      idade           TYPE i,
+      ultima_mensagem TYPE string.
+
+    METHODS:
+      falar IMPORTING iv_mensagem TYPE string.
+
+    CLASS-METHODS:
+      _gerar_instancia RETURNING VALUE(return) TYPE REF TO lcl_loucutor.
+ENDCLASS.
+
+
+
+
+
+
+CLASS lcl_loucutor IMPLEMENTATION.
+  METHOD falar.
+  ENDMETHOD.
+
+  METHOD _gerar_instancia.
+  ENDMETHOD.
+ENDCLASS.

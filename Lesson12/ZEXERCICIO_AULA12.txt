@@ -1,0 +1,105 @@
+REPORT zexercicio_aula12.
+
+**********************************************************************
+* DEFINIÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_elemento_de_dados DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      _gerar_elemento_de_dados IMPORTING iv_nome        TYPE char20
+                                         iv_descricao   TYPE string
+                                         iv_texto_curto TYPE text15
+                                         iv_texto_medio TYPE text30
+                                         iv_texto_longo TYPE text50
+                                         iv_titulo      TYPE text20
+                               RETURNING VALUE(return)  TYPE REF TO lcl_elemento_de_dados,
+
+      _adicionar_ao_dicionario IMPORTING io_elemento_de_dados TYPE REF TO lcl_elemento_de_dados,
+
+      _listar_dicionario.
+
+    METHODS:
+      constructor IMPORTING iv_nome        TYPE char20
+                            iv_descricao   TYPE string
+                            iv_texto_curto TYPE text15
+                            iv_texto_medio TYPE text30
+                            iv_texto_longo TYPE text50
+                            iv_titulo      TYPE text20,
+
+      descrever_elemento.
+
+    CLASS-DATA:
+      _dicionario_de_dados TYPE TABLE OF REF TO lcl_elemento_de_dados.
+
+    DATA:
+      texto_curto   TYPE text15,
+      texto_medio   TYPE text30,
+      texto_longo   TYPE text50,
+      texto_titulo  TYPE text20,
+      descricao     TYPE string,
+      nome_elemento TYPE char20,
+      tipo_de_dados TYPE string.
+ENDCLASS.
+
+CLASS lcl_programa DEFINITION FINAL CREATE PRIVATE.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      _start_of_selection,
+      _end_of_selection.
+ENDCLASS.
+
+
+START-OF-SELECTION.
+  lcl_programa=>_start_of_selection( ).
+
+END-OF-SELECTION.
+  lcl_programa=>_end_of_selection( ).
+
+
+
+**********************************************************************
+* IMPLENTAÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_programa IMPLEMENTATION.
+  METHOD _start_of_selection.
+    "Implemente seu código aqui
+  ENDMETHOD.
+
+  METHOD _end_of_selection.
+    "Saída dos Elementos de Dados em Tela
+    lcl_elemento_de_dados=>_listar_dicionario( ).
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_elemento_de_dados IMPLEMENTATION.
+  METHOD _gerar_elemento_de_dados.
+    "Implemente seu código aqui
+  ENDMETHOD.
+
+  METHOD _adicionar_ao_dicionario.
+    "Implemente seu código aqui
+  ENDMETHOD.
+
+  METHOD constructor.
+    texto_curto   = iv_texto_curto.
+    texto_medio   = iv_texto_medio.
+    texto_longo   = iv_texto_longo.
+    texto_titulo  = iv_titulo.
+    descricao     = iv_descricao.
+    nome_elemento = iv_nome.
+  ENDMETHOD.
+
+  METHOD descrever_elemento.
+    WRITE:/ 'Elemento de dados', nome_elemento, 'definido com a descrição', descricao.
+    WRITE:/ 'Atributos:'.
+    WRITE:/ 'Texto Curto:', texto_curto.
+    WRITE:/ 'Texto Médio:', texto_medio.
+    WRITE:/ 'Texto Longo:', texto_longo.
+    WRITE:/ 'Texto Título:', texto_titulo.
+    SKIP.
+  ENDMETHOD.
+
+  METHOD _listar_dicionario.
+    "Implemente seu código aqui
+  ENDMETHOD.
+ENDCLASS.

@@ -1,0 +1,46 @@
+REPORT zexercicio_aula10.
+
+CLASS lcl_elemento_de_dados DEFINITION.
+ PUBLIC SECTION.
+	 CONSTANTS:
+		 categoria_dominio TYPE char1 VALUE 'D',
+		 categoria_incorporado TYPE char1 VALUE 'I'.
+	 
+	 CLASS-METHODS:
+		_gerar_elemento_de_dados.
+	 
+	 METHODS:
+		 resgatar_texto,
+		 definir_texto,
+		 resgatar_descricao,
+		 definir_descricao,
+		 resgatar_tipo_de_dados.
+	 
+	 CLASS-DATA:
+		 _dicionario_de_dados TYPE TABLE OF REF TO lcl_elemento_de_dados,
+		 _ultimo_elemento TYPE REF TO lcl_elemento_de_dados.
+	 
+	 DATA:
+		 texto_curto TYPE text15,
+		 texto_medio TYPE text30,
+		 texto_longo TYPE text50,
+		 texto_titulo TYPE text20,
+		 descricao TYPE string,
+		 nome_elemento TYPE char20,
+		 tipo_de_dados TYPE string.
+ENDCLASS.
+
+CLASS lcl_elemento_de_dados IMPLEMENTATION.
+	 METHOD definir_descricao.
+	 ENDMETHOD.
+	 METHOD definir_texto.
+	 ENDMETHOD.
+	 METHOD resgatar_descricao.
+	 ENDMETHOD.
+	 METHOD resgatar_texto.
+	 ENDMETHOD.
+	 METHOD resgatar_tipo_de_dados.
+	 ENDMETHOD.
+	 METHOD _gerar_elemento_de_dados.
+	 ENDMETHOD.
+ENDCLASS.

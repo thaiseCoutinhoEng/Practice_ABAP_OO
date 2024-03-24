@@ -1,0 +1,58 @@
+REPORT zexercicio_aula13.
+
+**********************************************************************
+* PARAMETRO DE SELE플O
+**********************************************************************
+PARAMETERS: p_tab TYPE ddobjname.
+
+
+**********************************************************************
+* DEFINI플O DE CLASSES
+**********************************************************************
+CLASS lcl_programa DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      _start_of_selection.
+ENDCLASS.
+
+
+**********************************************************************
+* INICIALIZA플O DO PROGRAMA
+**********************************************************************
+START-OF-SELECTION.
+  lcl_programa=>_start_of_selection( ).
+
+
+**********************************************************************
+* IMPLEMENTA플O DE CLASSES
+**********************************************************************
+CLASS lcl_programa IMPLEMENTATION.
+  METHOD _start_of_selection.
+    DATA: lt_dd03p_tab TYPE TABLE OF dd03p,
+          lo_table     TYPE REF TO cl_salv_table.
+
+    CALL FUNCTION 'DDIF_TABL_GET'
+      EXPORTING
+        name          = p_tab
+        langu         = sy-langu
+      TABLES
+        dd03p_tab     = lt_dd03p_tab
+      EXCEPTIONS
+        illegal_input = 1
+        OTHERS        = 2.
+
+    IF sy-subrc <> 0.
+      MESSAGE 'Erro ao ler tabela' TYPE 'E'.
+    ENDIF.
+
+    IF lt_dd03p_tab IS INITIAL.
+      MESSAGE 'Tabela inexistente' TYPE 'E'.
+    ENDIF.
+
+    cl_salv_table=>factory( IMPORTING r_salv_table = lo_table
+                             CHANGING t_table = lt_dd03p_tab ).
+
+    lo_table->display( ).
+
+  ENDMETHOD.
+ENDCLASS.

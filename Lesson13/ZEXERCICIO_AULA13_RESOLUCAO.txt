@@ -1,0 +1,98 @@
+REPORT zexercicio_aula13_resolucao.
+
+**********************************************************************
+* PARAMETRO DE SELEÇÃO
+**********************************************************************
+PARAMETERS: p_tab TYPE ddobjname.
+
+
+**********************************************************************
+* DEFINIÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_tabela DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+      constructor IMPORTING iv_nome_tabela TYPE ddobjname,
+
+      verificar_consistencia RETURNING VALUE(resultado) TYPE boolean.
+
+    DATA:
+      lt_dd03p_tab TYPE TABLE OF dd03p.
+ENDCLASS.
+
+CLASS lcl_programa DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      _start_of_selection IMPORTING iv_nome_tabela TYPE ddobjname,
+      _end_of_selection.
+
+    CLASS-DATA:
+      _lo_tabela TYPE REF TO lcl_tabela.
+ENDCLASS.
+
+
+
+**********************************************************************
+* INICIALIZAÇÃO DO PROGRAMA
+**********************************************************************
+START-OF-SELECTION.
+  lcl_programa=>_start_of_selection( p_tab ).
+
+END-OF-SELECTION.
+  lcl_programa=>_end_of_selection( ).
+
+
+**********************************************************************
+* IMPLEMENTAÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_tabela IMPLEMENTATION.
+  METHOD constructor.
+    CALL FUNCTION 'DDIF_TABL_GET'
+      EXPORTING
+        name          = iv_nome_tabela
+        langu         = sy-langu
+      TABLES
+        dd03p_tab     = lt_dd03p_tab
+      EXCEPTIONS
+        illegal_input = 1
+        OTHERS        = 2.
+
+    IF sy-subrc <> 0.
+      MESSAGE 'Erro ao ler tabela' TYPE 'E'.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD verificar_consistencia.
+    resultado = 'X'.
+
+    IF lt_dd03p_tab IS INITIAL.
+      CLEAR resultado.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_programa IMPLEMENTATION.
+  METHOD _start_of_selection.
+    "Cria o Objeto Tabela
+    CREATE OBJECT _lo_tabela
+      EXPORTING
+        iv_nome_tabela = iv_nome_tabela.
+
+    "Verifica se a mesma é válida através do método funcional
+    IF _lo_tabela->verificar_consistencia( ) IS INITIAL.
+      MESSAGE 'Tabela inexistente no Banco de Dados' TYPE 'S' DISPLAY LIKE 'E'.
+      LEAVE LIST-PROCESSING.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD _end_of_selection.
+    DATA: lo_table TYPE REF TO cl_salv_table.
+
+    "Gera a instância do ALV
+    cl_salv_table=>factory( IMPORTING r_salv_table = lo_table
+                             CHANGING t_table      = _lo_tabela->lt_dd03p_tab ).
+
+    "Exibe o ALV
+    lo_table->display( ).
+  ENDMETHOD.
+ENDCLASS.

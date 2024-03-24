@@ -1,0 +1,69 @@
+REPORT zexercicio_aula9.
+
+CLASS lcl_elemento_de_dados DEFINITION.
+ PUBLIC SECTION.
+	METHODS:
+		resgatar_texto,
+		definir_texto,
+		resgatar_descricao,
+		definir_descricao,
+		resgatar_tipo_de_dados.
+	DATA:
+		texto_curto TYPE text15,
+		texto_medio TYPE text30,
+		texto_longo TYPE text50,
+		texto_titulo TYPE text20,
+		descricao TYPE string,
+		nome_elemento TYPE char20,
+		tipo_de_dados TYPE string.
+ENDCLASS.
+
+START-OF-SELECTION.
+ *Declaração dos objetos
+	DATA: lo_matnr TYPE REF TO lcl_elemento_de_dados,
+		lo_werks_d TYPE REF TO lcl_elemento_de_dados,
+		lo_belnr_d TYPE REF TO lcl_elemento_de_dados,
+		lo_zdeexercicio_oo TYPE REF TO lcl_elemento_de_dados.
+ *Gerando as instâncias
+	CREATE OBJECT: lo_matnr,
+				   lo_werks_d,
+				   *lo_belnr_d,
+				   lo_zdeexercicio_oo.
+ *Verificação das instâncias
+ 
+ IF lo_matnr IS BOUND.
+	WRITE:/ 'Objeto LO_MATNR criado'.
+ ELSE.
+	WRITE:/ 'Objeto LO_MATNR não criado'.
+ ENDIF.
+ 
+ IF lo_werks_d IS BOUND.
+	WRITE:/ 'Objeto LO_WERKS_D criado'.
+ ELSE.
+	WRITE:/ 'Objeto LO_WERKS_D não criado'.
+ ENDIF.
+ 
+ IF lo_belnr_d IS BOUND.
+	WRITE:/ 'Objeto LO_BELNR_D criado'.
+ ELSE.
+	WRITE:/ 'Objeto LO_BELNR_D não criado'.
+ ENDIF.
+ 
+ IF lo_zdeexercicio_oo IS BOUND.
+	WRITE:/ 'Objeto LO_ZDEEXERCICIO_OO criado'.
+ ELSE.
+	WRITE:/ 'Objeto LO_ZDEEXERCICIO_OO não criado'.
+ ENDIF.
+ 
+CLASS lcl_elemento_de_dados IMPLEMENTATION.
+	METHOD definir_descricao.
+	ENDMETHOD.
+	METHOD definir_texto.
+	ENDMETHOD.
+	METHOD resgatar_descricao.
+	ENDMETHOD.
+	METHOD resgatar_texto.
+	ENDMETHOD.
+	METHOD resgatar_tipo_de_dados.
+	ENDMETHOD.
+ENDCLASS.
