@@ -1,0 +1,10 @@
+METHODS:
+    set_%Nome do Atributo% IMPORTING iv_%Nome do Atributo% TYPE %Tipo do Atributo%,
+    get_%Nome do Atributo% RETURNING VALUE(return) TYPE %Tipo do Atributo%.
+
+METHOD set_%Nome do Atributo%.
+    me->%Nome do Atributo% = iv_%Nome do Atributo%.
+ENDMETHOD.
+METHOD get_%Nome do Atributo%.
+    return = me->%Nome do Atributo%.
+ENDMETHOD.
