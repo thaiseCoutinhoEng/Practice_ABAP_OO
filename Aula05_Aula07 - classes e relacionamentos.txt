@@ -1,0 +1,53 @@
+REPORT zexercicio_luta.
+
+CLASS lcl_luta DEFINITION DEFERRED.
+CLASS lcl_lutador DEFINITION DEFERRED.
+
+CLASS lcl_luva DEFINITION.
+ PUBLIC SECTION.
+	DATA:
+		cor TYPE string.
+		lcl_lutador TYPE REF TO lcl_lutador. //Criando o relacionamento com o objeto lutador.
+ENDCLASS.
+
+CLASS lcl_lutador DEFINITION.
+ PUBLIC SECTION.
+	DATA:
+		nome TYPE string,
+		idade TYPE i,
+		peso TYPE p,
+		resistencia TYPE p,
+		cor_racial TYPE string.
+		luta TYPE REF TO lcl_luta,    //Criando o relacionamento com o objeto luta.
+		luvas TYPE TABLE OF REF TO lcl_luva.  	 //Criando o relacionamento com o objeto luva (tabela).
+	METHODS:
+		emitir_golpe,
+		receber_golpe,
+		vestir_luvas.
+ENDCLASS.
+
+CLASS lcl_luta DEFINITION.
+ PUBLIC SECTION.
+	METHODS:
+		comecar_round,
+		encerrar_round.
+	DATA:
+		rounds TYPE i.
+		lutadores TYPE TABLE OF REF TO lcl_lutador.  //Criando o relacionamento com o objeto lutador (tabela).
+ENDCLASS.
+
+CLASS lcl_lutador IMPLEMENTATION.
+	METHOD emitir_golpe.
+	ENDMETHOD.
+	METHOD receber_golpe.
+	ENDMETHOD.
+	METHOD vestir_luvas.
+	ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_luta IMPLEMENTATION.
+	METHOD comecar_round.
+	ENDMETHOD.
+	METHOD encerrar_round.
+	ENDMETHOD.
+ENDCLASS
