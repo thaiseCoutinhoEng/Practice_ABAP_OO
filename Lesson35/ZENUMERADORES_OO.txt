@@ -1,0 +1,177 @@
+REPORT zenumeradores_oo.
+
+**********************************************************************
+* DEFINI플O DE INTERFACES
+**********************************************************************
+INTERFACE lif_enum_telas.
+  TYPES: tela TYPE sy-dynnr.
+
+  CONSTANTS: tela_9000           TYPE tela VALUE '9000',
+             tela_9100           TYPE tela VALUE '9100',
+
+             prefixo_classe_tela TYPE string VALUE 'LCL_TELA_'.
+ENDINTERFACE.
+
+INTERFACE lif_tela.
+  METHODS:
+    executar_pbo,
+    executar_pai.
+
+  DATA: v_tela TYPE sy-dynnr READ-ONLY.
+ENDINTERFACE.
+
+INTERFACE lif_tela_selecao.
+  METHODS:
+    exibir_tela.
+ENDINTERFACE.
+
+INTERFACE lif_tela_popup.
+  METHODS:
+    exibir_tela IMPORTING iv_start_col TYPE i
+                          iv_start_row TYPE i
+                          iv_end_col   TYPE i OPTIONAL
+                          iv_end_row   TYPE i OPTIONAL.
+ENDINTERFACE.
+
+**********************************************************************
+* DEFINI플O DE CLASSES
+**********************************************************************
+CLASS lcl_tela_fabrica DEFINITION DEFERRED.
+
+
+CLASS lcl_tela DEFINITION ABSTRACT CREATE PROTECTED.
+  PUBLIC SECTION.
+    INTERFACES:
+      lif_tela ABSTRACT METHODS executar_pbo executar_pai,
+      lif_tela_selecao,
+      lif_tela_popup.
+
+    ALIASES:
+      executar_pbo FOR lif_tela~executar_pbo,
+      executar_pai FOR lif_tela~executar_pai,
+      exibir_tela  FOR lif_tela_selecao~exibir_tela,
+      exebir_popup FOR lif_tela_popup~exibir_tela,
+      v_tela       FOR lif_tela~v_tela.
+
+    METHODS:
+      constructor IMPORTING iv_tela TYPE sy-dynnr,
+
+      set_v_tela IMPORTING iv_v_tela     TYPE sy-dynnr,
+      get_v_tela RETURNING VALUE(return) TYPE sy-dynnr.
+ENDCLASS.
+
+CLASS lcl_tela_9000 DEFINITION INHERITING FROM lcl_tela FRIENDS lcl_tela_fabrica.
+  PUBLIC SECTION.
+    METHODS:
+      executar_pbo REDEFINITION,
+      executar_pai REDEFINITION.
+ENDCLASS.
+
+CLASS lcl_tela_9100 DEFINITION INHERITING FROM lcl_tela FRIENDS lcl_tela_fabrica.
+  PUBLIC SECTION.
+    METHODS:
+      executar_pbo REDEFINITION,
+      executar_pai REDEFINITION.
+ENDCLASS.
+
+CLASS lcl_tela_fabrica DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      _fabricar_tela IMPORTING iv_tela       TYPE lif_enum_telas=>tela
+                     RETURNING VALUE(result) TYPE REF TO lcl_tela.
+ENDCLASS.
+
+
+
+
+**********************************************************************
+* TELA DE SELE플O
+**********************************************************************
+SELECTION-SCREEN: BEGIN OF BLOCK b01.
+PARAMETERS: p_9000 RADIOBUTTON GROUP grp1 DEFAULT 'X',
+            p_9100 RADIOBUTTON GROUP grp1.
+SELECTION-SCREEN: END OF BLOCK b01.
+
+
+SELECTION-SCREEN: BEGIN OF SCREEN 9000.
+PARAMETERS: p_text1 TYPE string DEFAULT 'Tela 9000'.
+SELECTION-SCREEN: END OF SCREEN 9000.
+
+SELECTION-SCREEN: BEGIN OF SCREEN 9100.
+PARAMETERS: p_text2 TYPE string DEFAULT 'Tela 9100'.
+SELECTION-SCREEN: END OF SCREEN 9100.
+
+
+
+**********************************************************************
+* INICIO PROCESSAMENTO
+**********************************************************************
+START-OF-SELECTION.
+  DATA: lo_tela TYPE REF TO lcl_tela.
+
+  CASE 'X'.
+    WHEN p_9000.
+      lo_tela = lcl_tela_fabrica=>_fabricar_tela( lif_enum_telas=>tela_9000 ).
+
+    WHEN p_9100.
+      lo_tela = lcl_tela_fabrica=>_fabricar_tela( lif_enum_telas=>tela_9100 ).
+
+  ENDCASE.
+
+  lo_tela->exibir_tela( ).
+
+  lo_tela->exebir_popup( iv_start_col = 20
+                         iv_start_row = 2 ).
+
+**********************************************************************
+* IMPLEMENTA플O DE CLASSES
+**********************************************************************
+CLASS lcl_tela IMPLEMENTATION.
+  METHOD constructor.
+    me->set_v_tela( iv_tela ).
+  ENDMETHOD.
+
+  METHOD set_v_tela.
+    me->v_tela = iv_v_tela.
+  ENDMETHOD.
+  METHOD get_v_tela.
+    return = me->v_tela.
+  ENDMETHOD.
+
+  METHOD exibir_tela.
+    CALL SELECTION-SCREEN me->v_tela.
+  ENDMETHOD.
+
+  METHOD exebir_popup.
+    CALL SELECTION-SCREEN me->v_tela STARTING AT iv_start_col iv_start_row
+                                       ENDING AT iv_end_col   iv_end_row.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_tela_9000 IMPLEMENTATION.
+  METHOD executar_pai.
+  ENDMETHOD.
+
+  METHOD executar_pbo.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_tela_9100 IMPLEMENTATION.
+  METHOD executar_pai.
+  ENDMETHOD.
+
+  METHOD executar_pbo.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_tela_fabrica IMPLEMENTATION.
+  METHOD _fabricar_tela.
+    DATA: lv_nome_classe TYPE string.
+
+    lv_nome_classe = lif_enum_telas=>prefixo_classe_tela && iv_tela.
+
+    CREATE OBJECT result TYPE (lv_nome_classe)
+      EXPORTING
+        iv_tela = iv_tela.
+  ENDMETHOD.
+ENDCLASS.

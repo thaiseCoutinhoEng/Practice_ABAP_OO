@@ -1,0 +1,7 @@
+REPORT zinterfaces_oo.
+
+INTERFACE lif_controle.
+  METHODS:
+    receber_comando IMPORTING iv_commando TYPE string,
+    executar_comando.
+ENDINTERFACE.

@@ -1,0 +1,89 @@
+REPORT zimplementando_interfaces_oo.
+
+**********************************************************************
+* DEFINI플O DE INTERFACES
+**********************************************************************
+INTERFACE lif_tela.
+  METHODS:
+    executar_pbo,
+    executar_pai,
+    exibir_tela.
+ENDINTERFACE.
+
+**********************************************************************
+* DEFINI플O DE CLASSES
+**********************************************************************
+CLASS lcl_tela DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    INTERFACES:
+      lif_tela ABSTRACT METHODS executar_pbo
+      executar_pai.
+
+    METHODS:
+      constructor IMPORTING iv_tela TYPE sy-dynnr,
+
+      set_v_tela IMPORTING iv_v_tela     TYPE sy-dynnr,
+      get_v_tela RETURNING VALUE(return) TYPE sy-dynnr.
+
+  PRIVATE SECTION.
+    DATA:
+      v_tela TYPE sy-dynnr.
+ENDCLASS.
+
+CLASS lcl_tela_9000 DEFINITION INHERITING FROM lcl_tela.
+  PUBLIC SECTION.
+    METHODS:
+      lif_tela~executar_pai REDEFINITION,
+      lif_tela~executar_pbo REDEFINITION.
+ENDCLASS.
+
+
+
+
+**********************************************************************
+* TELA DE SELE플O
+**********************************************************************
+SELECTION-SCREEN: BEGIN OF SCREEN 9000.
+PARAMETERS: p_texto TYPE string DEFAULT 'Tela 9000'.
+SELECTION-SCREEN: END OF SCREEN 9000.
+
+
+**********************************************************************
+* INICIO PROCESSAMENTO
+**********************************************************************
+START-OF-SELECTION.
+  DATA: lo_tela TYPE REF TO lif_tela.
+
+  CREATE OBJECT lo_tela TYPE lcl_tela_9000
+    EXPORTING
+      iv_tela = '9000'.
+
+  lo_tela->exibir_tela( ).
+
+**********************************************************************
+* IMPLEMENTA플O DE CLASSES
+**********************************************************************
+CLASS lcl_tela IMPLEMENTATION.
+  METHOD constructor.
+    me->set_v_tela( iv_tela ).
+  ENDMETHOD.
+
+  METHOD set_v_tela.
+    me->v_tela = iv_v_tela.
+  ENDMETHOD.
+  METHOD get_v_tela.
+    return = me->v_tela.
+  ENDMETHOD.
+
+  METHOD lif_tela~exibir_tela.
+    CALL SCREEN me->v_tela.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_tela_9000 IMPLEMENTATION.
+  METHOD lif_tela~executar_pai.
+  ENDMETHOD.
+
+  METHOD lif_tela~executar_pbo.
+  ENDMETHOD.
+ENDCLASS.

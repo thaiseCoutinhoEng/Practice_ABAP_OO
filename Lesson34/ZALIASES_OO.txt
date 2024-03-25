@@ -1,0 +1,75 @@
+REPORT zaliases_oo.
+
+**********************************************************************
+* DEFINIÇÃO DE INTERFACES
+**********************************************************************
+INTERFACE lif_tela.
+  METHODS:
+    executar_pbo,
+    executar_pai.
+
+  DATA: v_tela TYPE sy-dynnr READ-ONLY.
+ENDINTERFACE.
+
+INTERFACE lif_tela_selecao.
+  METHODS:
+    exibir_tela.
+ENDINTERFACE.
+
+INTERFACE lif_tela_popup.
+  METHODS:
+    exibir_tela IMPORTING iv_start_col TYPE i
+                          iv_start_row TYPE i
+                          iv_end_col   TYPE i OPTIONAL
+                          iv_end_row   TYPE i OPTIONAL.
+ENDINTERFACE.
+
+**********************************************************************
+* DEFINIÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_tela DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    INTERFACES:
+      lif_tela ABSTRACT METHODS executar_pbo executar_pai,
+      lif_tela_selecao,
+      lif_tela_popup.
+
+    ALIASES:
+      executar_pbo FOR lif_tela~executar_pbo,
+      executar_pai FOR lif_tela~executar_pai,
+      exibir_tela  FOR lif_tela_selecao~exibir_tela,
+      exebir_popup FOR lif_tela_popup~exibir_tela,
+      v_tela       FOR lif_tela~v_tela.
+
+    METHODS:
+      constructor IMPORTING iv_tela TYPE sy-dynnr,
+
+      set_v_tela IMPORTING iv_v_tela     TYPE sy-dynnr,
+      get_v_tela RETURNING VALUE(return) TYPE sy-dynnr.
+ENDCLASS.
+
+
+**********************************************************************
+* IMPLEMENTAÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_tela IMPLEMENTATION.
+  METHOD constructor.
+    me->set_v_tela( iv_tela ).
+  ENDMETHOD.
+
+  METHOD set_v_tela.
+    me->v_tela = iv_v_tela.
+  ENDMETHOD.
+  METHOD get_v_tela.
+    return = me->v_tela.
+  ENDMETHOD.
+
+  METHOD exibir_tela.
+    CALL SCREEN me->v_tela.
+  ENDMETHOD.
+
+  METHOD exebir_popup.
+    CALL SCREEN me->v_tela STARTING AT iv_start_col iv_start_row
+                             ENDING AT iv_end_col   iv_end_row.
+  ENDMETHOD.
+ENDCLASS.
