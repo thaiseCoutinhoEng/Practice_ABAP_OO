@@ -1,0 +1,577 @@
+REPORT zeventos_oo.
+
+TYPE-POOLS: icon.
+
+TABLES: sscrfields.
+
+CLASS lcl_botao   DEFINITION DEFERRED.
+CLASS lcl_formula DEFINITION DEFERRED.
+
+**********************************************************************
+* DEFINIÇÃO DE INTERFACES
+**********************************************************************
+INTERFACE lif_enum_botao.
+  TYPES: tyt_botoes TYPE TABLE OF REF TO lcl_botao WITH NON-UNIQUE KEY table_line.
+
+  CONSTANTS: c_icon_event_signed    TYPE icon-name VALUE 'ICON_WORKFLOW_WAIT_FOR_EVENTS',
+             c_icon_event_unasigned TYPE icon-name VALUE 'ICON_WORKFLOW_INDEFINITE_STEP',
+
+             c_btn_calcular         TYPE string VALUE 'BTN_CALC',
+             c_btn_assinar1         TYPE string VALUE 'BTN_AC1',
+             c_btn_assinar2         TYPE string VALUE 'BTN_AC2',
+             c_btn_assinar3         TYPE string VALUE 'BTN_AC3'.
+ENDINTERFACE.
+
+INTERFACE lif_enum_formula.
+  TYPES: tyt_formulas TYPE TABLE OF REF TO lcl_formula WITH NON-UNIQUE KEY table_line,
+         y_decimal    TYPE p LENGTH 8 DECIMALS 2.
+ENDINTERFACE.
+
+
+**********************************************************************
+* DEFINIÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_botao DEFINITION.
+  PUBLIC SECTION.
+    EVENTS: clique EXPORTING VALUE(ev_nome) TYPE string.
+
+    METHODS:
+      constructor IMPORTING iv_nome        TYPE string
+                            iv_texto       TYPE string    OPTIONAL
+                            iv_icon        TYPE icon-name OPTIONAL
+                            iv_info_rapida TYPE string    OPTIONAL,
+
+      set_v_nome IMPORTING iv_v_nome     TYPE string,
+      get_v_nome RETURNING VALUE(return) TYPE string,
+
+      set_v_texto IMPORTING iv_v_texto    TYPE string,
+      get_v_texto RETURNING VALUE(return) TYPE string,
+
+      set_v_icon IMPORTING iv_v_icon     TYPE icon-name,
+      get_v_icon RETURNING VALUE(return) TYPE icon-name,
+
+      set_v_info IMPORTING iv_v_info     TYPE string,
+      get_v_info RETURNING VALUE(return) TYPE string,
+
+      desenhar,
+      clicar.
+
+    DATA:
+      v_nome TYPE string READ-ONLY.
+
+  PRIVATE SECTION.
+    DATA:
+      v_texto TYPE string,
+      v_icon  TYPE icon-name,
+      v_info  TYPE string.
+ENDCLASS.
+
+CLASS lcl_calculo DEFINITION.
+  PUBLIC SECTION.
+    EVENTS:
+      calcular EXPORTING VALUE(num_a) TYPE lif_enum_formula=>y_decimal
+                         VALUE(num_b) TYPE lif_enum_formula=>y_decimal.
+
+    METHODS:
+      constructor,
+
+      adicionar_formula IMPORTING iv_formula TYPE string,
+
+      resgatar_formula IMPORTING iv_formula    TYPE string
+                       RETURNING VALUE(result) TYPE REF TO lcl_formula,
+
+      ao_clique_calcular FOR EVENT clique OF lcl_botao IMPORTING ev_nome,
+      ao_clique_assinar  FOR EVENT clique OF lcl_botao IMPORTING ev_nome.
+
+  PRIVATE SECTION.
+    DATA:
+      t_formulas TYPE lif_enum_formula=>tyt_formulas.
+ENDCLASS.
+
+CLASS lcl_formula DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+      constructor IMPORTING iv_formula TYPE string,
+
+      set_v_formula IMPORTING iv_v_formula  TYPE string,
+      get_v_formula RETURNING VALUE(return) TYPE string,
+
+      set_v_resultado IMPORTING iv_v_resultado TYPE lif_enum_formula=>y_decimal,
+      get_v_resultado RETURNING VALUE(return) TYPE lif_enum_formula=>y_decimal,
+
+      set_v_ativo IMPORTING iv_v_ativo TYPE boolean,
+      get_v_ativo RETURNING VALUE(return) TYPE boolean,
+
+      ao_calcular FOR EVENT calcular OF lcl_calculo IMPORTING num_a num_b,
+
+      assinar_desassinar.
+
+    DATA:
+      v_formula TYPE string READ-ONLY.
+
+  PRIVATE SECTION.
+    DATA:
+      v_resultado TYPE lif_enum_formula=>y_decimal,
+      v_ativo     TYPE boolean.
+ENDCLASS.
+
+CLASS lcl_programa DEFINITION CREATE PRIVATE.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      _get_instancia RETURNING VALUE(result) TYPE REF TO lcl_programa,
+
+      _initialization,
+      _at_selection_screen_output,
+      _at_selection_screen.
+
+    METHODS:
+      adicionar_botao IMPORTING io_botao TYPE REF TO lcl_botao,
+
+      resgatar_botao IMPORTING iv_nome       TYPE string
+                     RETURNING VALUE(result) TYPE REF TO lcl_botao.
+
+  PRIVATE SECTION.
+    CLASS-METHODS:
+      _inicializar_botoes,
+      _inicializar_textos,
+      _assinar_eventos.
+
+    CLASS-DATA:
+      _o_programa TYPE REF TO lcl_programa.
+
+    DATA:
+      t_botoes TYPE lif_enum_botao=>tyt_botoes.
+ENDCLASS.
+
+
+
+**********************************************************************
+* TELA DE SELEÇÃO
+**********************************************************************
+SELECTION-SCREEN: BEGIN OF BLOCK b01 WITH FRAME TITLE tparams.
+PARAMETERS: a TYPE lif_enum_formula=>y_decimal,
+            b TYPE lif_enum_formula=>y_decimal.
+
+SELECTION-SCREEN: SKIP.
+
+SELECTION-SCREEN: BEGIN OF LINE.
+SELECTION-SCREEN: PUSHBUTTON 1(20) btn_calc USER-COMMAND btn_calc VISIBLE LENGTH 15.
+SELECTION-SCREEN: END OF LINE.
+SELECTION-SCREEN: END OF BLOCK b01.
+
+SELECTION-SCREEN: BEGIN OF BLOCK b02 WITH FRAME TITLE tresult.
+SELECTION-SCREEN: BEGIN OF LINE.
+PARAMETERS: p_frml1 TYPE string DEFAULT '( A * B ) * B' VISIBLE LENGTH 20.
+PARAMETERS: p_res1  TYPE lif_enum_formula=>y_decimal.
+SELECTION-SCREEN: PUSHBUTTON 45(10) btn_ac1 USER-COMMAND btn_ac1 VISIBLE LENGTH 5.
+SELECTION-SCREEN: END OF LINE.
+
+SELECTION-SCREEN: BEGIN OF LINE.
+PARAMETERS: p_frml2 TYPE string DEFAULT 'A + B * B / A' VISIBLE LENGTH 20.
+PARAMETERS: p_res2  TYPE lif_enum_formula=>y_decimal.
+SELECTION-SCREEN: PUSHBUTTON 45(10) btn_ac2 USER-COMMAND btn_ac2 VISIBLE LENGTH 5.
+SELECTION-SCREEN: END OF LINE.
+
+SELECTION-SCREEN: BEGIN OF LINE.
+PARAMETERS: p_frml3 TYPE string DEFAULT 'B + ( A / B )' VISIBLE LENGTH 20.
+PARAMETERS: p_res3  TYPE lif_enum_formula=>y_decimal.
+SELECTION-SCREEN: PUSHBUTTON 45(10) btn_ac3 USER-COMMAND btn_ac3 VISIBLE LENGTH 5.
+SELECTION-SCREEN: END OF LINE.
+SELECTION-SCREEN: END OF BLOCK b02.
+
+
+**********************************************************************
+* INICIO PROCESSAMENTO
+**********************************************************************
+INITIALIZATION.
+  lcl_programa=>_initialization( ).
+
+AT SELECTION-SCREEN OUTPUT.
+  lcl_programa=>_at_selection_screen_output( ).
+
+
+AT SELECTION-SCREEN.
+  lcl_programa=>_at_selection_screen( ).
+
+
+
+**********************************************************************
+* IMPLEMENTAÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_programa IMPLEMENTATION.
+  METHOD _get_instancia.
+    IF NOT _o_programa IS BOUND.
+      CREATE OBJECT _o_programa.
+    ENDIF.
+    result = _o_programa.
+  ENDMETHOD.
+  METHOD _initialization.
+    _inicializar_botoes( ).
+    _inicializar_textos( ).
+    _assinar_eventos( ).
+  ENDMETHOD.
+
+  METHOD _at_selection_screen_output.
+    LOOP AT SCREEN.
+      IF screen-name CS 'P_FRML' OR screen-name CS 'P_RES'.
+        screen-input = 0.
+        MODIFY SCREEN.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD _at_selection_screen.
+    DATA: lo_programa TYPE REF TO lcl_programa,
+          lo_botao    TYPE REF TO lcl_botao,
+
+          lv_botao    TYPE string.
+
+    "Comando do usuário
+    lv_botao = sscrfields-ucomm.
+
+    "Instância do Programa
+    lo_programa = _get_instancia( ).
+
+    "Resgata Botão
+    lo_botao = lo_programa->resgatar_botao( lv_botao ). CHECK lo_botao IS BOUND.
+
+    "Executar ação do Botão para quem ouvir seu evento
+    lo_botao->clicar( ).
+
+    "Versão 7.4
+*    TRY.
+*        _get_instancia( )->resgatar_botao( CONV string( sscrfields-ucomm ) )->clicar( ).
+*      CATCH cx_root. "O botão pode não estar instanciado, então previne-se o DUMP
+*        "...
+*    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD _inicializar_botoes.
+    DATA: lo_botao    TYPE REF TO lcl_botao,
+          lo_programa TYPE REF TO lcl_programa.
+
+    lo_programa = _get_instancia( ).
+
+    "Versão 7.4
+*    _adicionar_botao( NEW lcl_botao( iv_nome  = 'BTN_CALC'
+*                                     iv_texto = 'Calcular' ) ).
+    "Botão Calcular - Antes da versão 7.4
+    CREATE OBJECT lo_botao
+      EXPORTING
+        iv_nome  = lif_enum_botao=>c_btn_calcular
+        iv_texto = 'Calcular'.
+
+    lo_programa->adicionar_botao( lo_botao ).
+
+    "Botão Assinar Evento Fórmula 1
+    CREATE OBJECT lo_botao
+      EXPORTING
+        iv_nome = lif_enum_botao=>c_btn_assinar1
+        iv_icon = lif_enum_botao=>c_icon_event_unasigned.
+
+    lo_programa->adicionar_botao( lo_botao ).
+
+    "Botão Assinar Evento Fórmula 2
+    CREATE OBJECT lo_botao
+      EXPORTING
+        iv_nome = lif_enum_botao=>c_btn_assinar2
+        iv_icon = lif_enum_botao=>c_icon_event_unasigned.
+
+    lo_programa->adicionar_botao( lo_botao ).
+
+    "Botão Assinar Evento Fórmula 2
+    CREATE OBJECT lo_botao
+      EXPORTING
+        iv_nome = lif_enum_botao=>c_btn_assinar3
+        iv_icon = lif_enum_botao=>c_icon_event_unasigned.
+
+    lo_programa->adicionar_botao( lo_botao ).
+  ENDMETHOD.
+
+  METHOD _inicializar_textos.
+    tparams = 'Parâmetros'.
+    tresult = 'Fórmulas e Resultados'.
+  ENDMETHOD.
+
+  METHOD _assinar_eventos.
+    DATA: lo_programa TYPE REF TO lcl_programa,
+          lo_botao    TYPE REF TO lcl_botao,
+          lo_calculo  TYPE REF TO lcl_calculo,
+
+          lv_botao    TYPE string.
+
+    "Programa
+    lo_programa = _get_instancia( ).
+
+    "Calculo
+    CREATE OBJECT lo_calculo.
+
+    "Botão Calcular
+    lo_botao = lo_programa->resgatar_botao( lif_enum_botao=>c_btn_calcular ).
+
+    "Assina evento entre Calculo e Botão Calcular
+    SET HANDLER lo_calculo->ao_clique_calcular FOR lo_botao.
+
+    "Assinar evento para as fórmulas
+    DO 3 TIMES.
+      CASE sy-index.
+        WHEN 1.
+          lv_botao = lif_enum_botao=>c_btn_assinar1.
+        WHEN 2.
+          lv_botao = lif_enum_botao=>c_btn_assinar2.
+        WHEN 3.
+          lv_botao = lif_enum_botao=>c_btn_assinar3.
+        WHEN OTHERS.
+          EXIT.
+      ENDCASE.
+
+      lo_botao = lo_programa->resgatar_botao( lv_botao ).
+
+      "Assina evento entre Calculo e Botão para Calcular a fórmula
+      SET HANDLER lo_calculo->ao_clique_assinar FOR lo_botao.
+    ENDDO.
+
+  ENDMETHOD.
+
+  METHOD adicionar_botao.
+    APPEND io_botao TO me->t_botoes.
+  ENDMETHOD.
+
+  METHOD resgatar_botao.
+    READ TABLE me->t_botoes INTO result WITH KEY table_line->v_nome = iv_nome.
+  ENDMETHOD.
+ENDCLASS.
+
+
+CLASS lcl_botao IMPLEMENTATION.
+  "$. Region Getters e Setters
+  METHOD set_v_icon.
+    me->v_icon = iv_v_icon.
+  ENDMETHOD.
+  METHOD get_v_icon.
+    return = me->v_icon.
+  ENDMETHOD.
+
+  METHOD set_v_texto.
+    me->v_texto = iv_v_texto.
+  ENDMETHOD.
+  METHOD get_v_texto.
+    return = me->v_texto.
+  ENDMETHOD.
+
+  METHOD set_v_nome.
+    me->v_nome = iv_v_nome.
+  ENDMETHOD.
+  METHOD get_v_nome.
+    return = me->v_nome.
+  ENDMETHOD.
+
+  METHOD set_v_info.
+    me->v_info = iv_v_info.
+  ENDMETHOD.
+  METHOD get_v_info.
+    return = me->v_info.
+  ENDMETHOD.
+  "$. Endregion Getters e Setters
+
+  METHOD constructor.
+    me->set_v_nome( iv_nome ).
+    me->set_v_texto( iv_texto ).
+    me->set_v_icon( iv_icon ).
+    me->set_v_info( iv_info_rapida ).
+
+    me->desenhar( ).
+  ENDMETHOD.
+
+  METHOD desenhar.
+    FIELD-SYMBOLS: <lv_button> TYPE any.
+
+    ASSIGN (me->v_nome) TO <lv_button>.
+    CHECK <lv_button> IS ASSIGNED.
+
+    IF me->v_texto IS INITIAL.
+      WRITE (me->v_icon) TO <lv_button>.
+
+    ELSE.
+      CALL FUNCTION 'ICON_CREATE'
+        EXPORTING
+          name                  = me->v_icon
+          text                  = me->v_texto
+          info                  = me->v_info
+        IMPORTING
+          result                = <lv_button>
+        EXCEPTIONS
+          icon_not_found        = 1
+          outputfield_too_short = 2
+          OTHERS                = 3.
+
+      IF sy-subrc <> 0.
+        <lv_button> = me->v_texto.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD clicar.
+    RAISE EVENT clique
+      EXPORTING
+        ev_nome = me->v_nome.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_formula IMPLEMENTATION.
+  "$. Region Getters e Setters
+  METHOD set_v_formula.
+    me->v_formula = iv_v_formula.
+  ENDMETHOD.
+  METHOD get_v_formula.
+    return = me->v_formula.
+  ENDMETHOD.
+
+  METHOD set_v_resultado.
+    me->v_resultado = iv_v_resultado.
+  ENDMETHOD.
+  METHOD get_v_resultado.
+    return = me->v_resultado.
+  ENDMETHOD.
+
+  METHOD set_v_ativo.
+    me->v_ativo = iv_v_ativo.
+  ENDMETHOD.
+  METHOD get_v_ativo.
+    return = me->v_ativo.
+  ENDMETHOD.
+  "$. Endregion Getters e Setters
+
+  METHOD constructor.
+    me->set_v_formula( iv_formula ).
+  ENDMETHOD.
+
+  METHOD ao_calcular.
+    DATA: lv_formula TYPE string,
+          lv_num_a   TYPE string,
+          lv_num_b   TYPE string.
+
+    lv_formula = me->get_v_formula( ).
+    lv_num_a   = num_a.
+    lv_num_b   = num_b.
+
+    REPLACE ALL OCCURRENCES OF 'A' IN lv_formula WITH lv_num_a.
+    REPLACE ALL OCCURRENCES OF 'B' IN lv_formula WITH lv_num_b.
+
+    CALL FUNCTION 'EVAL_FORMULA'
+      EXPORTING
+        formula                 = lv_formula
+      IMPORTING
+        value                   = me->v_resultado
+      EXCEPTIONS
+        division_by_zero        = 1
+        exp_error               = 2
+        formula_table_not_valid = 3
+        invalid_expression      = 4
+        invalid_value           = 5
+        log_error               = 6
+        parameter_error         = 7
+        sqrt_error              = 8
+        units_not_valid         = 9
+        missing_parameter       = 10
+        OTHERS                  = 11.
+    IF sy-subrc <> 0.
+      "...
+    ENDIF.
+
+    me->v_resultado = me->v_resultado * 100.
+  ENDMETHOD.
+
+  METHOD assinar_desassinar.
+    IF me->v_ativo IS INITIAL.
+      me->set_v_ativo( abap_true ).
+    ELSE.
+      me->set_v_ativo( abap_false ).
+      me->set_v_resultado( '0.00' ).
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_calculo IMPLEMENTATION.
+  METHOD constructor.
+    me->adicionar_formula( p_frml1 ). "Fórmula 1
+    me->adicionar_formula( p_frml2 ). "Fórmula 2
+    me->adicionar_formula( p_frml3 ). "Fórmula 3
+  ENDMETHOD.
+
+  METHOD adicionar_formula.
+    DATA: lo_formula TYPE REF TO lcl_formula.
+
+    CREATE OBJECT lo_formula
+      EXPORTING
+        iv_formula = iv_formula.
+
+    APPEND lo_formula TO me->t_formulas.
+  ENDMETHOD.
+
+  METHOD resgatar_formula.
+    READ TABLE me->t_formulas INTO result WITH KEY table_line->v_formula = iv_formula.
+  ENDMETHOD.
+
+  METHOD ao_clique_calcular.
+    DATA: lo_formulta TYPE REF TO lcl_formula.
+
+    "Gera o Evento
+    RAISE EVENT calcular
+      EXPORTING
+        num_a  = a
+        num_b  = b.
+
+    "Lê os dados após as execuções dos eventos, caso os mesmos tenham sido ouvidos
+    "Fórmula 1
+    lo_formulta = me->resgatar_formula( p_frml1 ).
+    p_res1 = lo_formulta->get_v_resultado( ).
+
+    "Fórmula 2
+    lo_formulta = me->resgatar_formula( p_frml2 ).
+    p_res2 = lo_formulta->get_v_resultado( ).
+
+    "Fórmula 3
+    lo_formulta = me->resgatar_formula( p_frml3 ).
+    p_res3 = lo_formulta->get_v_resultado( ).
+
+  ENDMETHOD.
+
+  METHOD ao_clique_assinar.
+    DATA: lo_programa TYPE REF TO lcl_programa,
+          lo_formula  TYPE REF TO lcl_formula,
+          lo_botao    TYPE REF TO lcl_botao,
+          lv_ativo    TYPE boolean.
+
+    CASE ev_nome.
+      WHEN lif_enum_botao=>c_btn_assinar1.
+        lo_formula = me->resgatar_formula( p_frml1 ).
+
+      WHEN lif_enum_botao=>c_btn_assinar2.
+        lo_formula = me->resgatar_formula( p_frml2 ).
+
+      WHEN lif_enum_botao=>c_btn_assinar3.
+        lo_formula = me->resgatar_formula( p_frml3 ).
+    ENDCASE.
+
+    CHECK lo_formula IS BOUND.
+
+    lo_formula->assinar_desassinar( ).
+
+    lo_programa = lcl_programa=>_get_instancia( ).
+    lo_botao = lo_programa->resgatar_botao( ev_nome ).
+
+    lv_ativo = lo_formula->get_v_ativo( ).
+
+    SET HANDLER lo_formula->ao_calcular FOR me ACTIVATION lv_ativo.
+
+    IF lv_ativo = abap_true.
+      lo_botao->set_v_icon( lif_enum_botao=>c_icon_event_signed ).
+    ELSE.
+      lo_botao->set_v_icon( lif_enum_botao=>c_icon_event_unasigned ).
+    ENDIF.
+
+    lo_botao->desenhar( ).
+  ENDMETHOD.
+ENDCLASS.

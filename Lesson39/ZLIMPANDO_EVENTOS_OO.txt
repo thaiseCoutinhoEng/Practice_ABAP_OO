@@ -1,0 +1,91 @@
+REPORT zlimpando_eventos_oo.
+
+CLASS lcl_saida_tela DEFINITION DEFERRED.
+
+**********************************************************************
+* DEFINIÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_gerador_contador DEFINITION.
+  PUBLIC SECTION.
+    EVENTS:
+      novo_contador_gerado EXPORTING VALUE(ev_contador) TYPE i.
+
+    METHODS:
+      constructor IMPORTING iv_contador TYPE i,
+      gerar_contadores.
+
+  PRIVATE SECTION.
+    DATA:
+      v_contador TYPE i.
+
+    METHODS:
+      ativar_desativar_evento IMPORTING io_saida_tela TYPE REF TO lcl_saida_tela
+                                        iv_ativo      TYPE boolean.
+ENDCLASS.
+
+CLASS lcl_saida_tela DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+      ao_novo_contador_gerado FOR EVENT novo_contador_gerado OF lcl_gerador_contador IMPORTING ev_contador.
+ENDCLASS.
+
+
+
+**********************************************************************
+* INICIO PROCESSAMENTO
+**********************************************************************
+START-OF-SELECTION.
+  DATA: lo_contador TYPE REF TO lcl_gerador_contador.
+
+  CREATE OBJECT lo_contador
+    EXPORTING
+      iv_contador = 3.
+
+  lo_contador->gerar_contadores( ).
+
+
+**********************************************************************
+* IMPLEMENTAÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_gerador_contador IMPLEMENTATION.
+  METHOD constructor.
+    me->v_contador = iv_contador.
+  ENDMETHOD.
+
+  METHOD gerar_contadores.
+    DATA: lo_saida_tela TYPE REF TO lcl_saida_tela,
+          lv_ativar     TYPE boolean.
+
+    DO me->v_contador TIMES.
+      CREATE OBJECT lo_saida_tela.
+
+      "Ativa o Evento
+      me->ativar_desativar_evento( io_saida_tela = lo_saida_tela
+                                   iv_ativo      = abap_true ).
+
+      "Dispara o Evento
+      RAISE EVENT novo_contador_gerado
+        EXPORTING
+          ev_contador = sy-index.
+
+      "Inativa o Evento
+      me->ativar_desativar_evento( io_saida_tela = lo_saida_tela
+                                   iv_ativo      = abap_false ).
+
+      "Limpa a Instância
+      FREE lo_saida_tela.
+    ENDDO.
+  ENDMETHOD.
+
+  METHOD ativar_desativar_evento.
+    CHECK io_saida_tela IS BOUND.
+
+    SET HANDLER io_saida_tela->ao_novo_contador_gerado FOR me ACTIVATION iv_ativo.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_saida_tela IMPLEMENTATION.
+  METHOD ao_novo_contador_gerado.
+    WRITE:/ 'Contador:', ev_contador.
+  ENDMETHOD.
+ENDCLASS.

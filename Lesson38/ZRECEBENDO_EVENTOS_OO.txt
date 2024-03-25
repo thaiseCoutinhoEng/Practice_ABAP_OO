@@ -1,0 +1,123 @@
+REPORT zrecebendo_eventos_oo.
+
+**********************************************************************
+* DEFINIÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_programa DEFINITION.
+  PUBLIC SECTION.
+    EVENTS:
+      saida_de_tela.
+
+    CLASS-METHODS:
+      _get_instancia RETURNING VALUE(result) TYPE REF TO lcl_programa.
+
+    METHODS:
+      at_selection_screen_output.
+
+  PRIVATE SECTION.
+    CLASS-DATA:
+      _o_programa TYPE REF TO lcl_programa.
+ENDCLASS.
+
+CLASS lcl_bloco DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    METHODS:
+      ao_saida_de_tela ABSTRACT FOR EVENT saida_de_tela OF lcl_programa.
+ENDCLASS.
+
+CLASS lcl_bloco_b1 DEFINITION INHERITING FROM lcl_bloco.
+  PUBLIC SECTION.
+    METHODS:
+      ao_saida_de_tela REDEFINITION.
+ENDCLASS.
+
+CLASS lcl_bloco_b2 DEFINITION INHERITING FROM lcl_bloco.
+  PUBLIC SECTION.
+    METHODS:
+      ao_saida_de_tela REDEFINITION.
+ENDCLASS.
+
+
+
+**********************************************************************
+* TELA DE SELEÇÃO
+**********************************************************************
+SELECTION-SCREEN: BEGIN OF BLOCK b1 WITH FRAME TITLE title_1.
+PARAMETERS: p_b1_a TYPE string,
+            p_b1_b TYPE string.
+SELECTION-SCREEN: BEGIN OF LINE.
+SELECTION-SCREEN: PUSHBUTTON 1(20) btn_b1 USER-COMMAND btn1 VISIBLE LENGTH 20.
+SELECTION-SCREEN: END OF LINE.
+SELECTION-SCREEN: END OF BLOCK b1.
+
+SELECTION-SCREEN: BEGIN OF BLOCK b2 WITH FRAME TITLE title_2.
+PARAMETERS: p_b2_a TYPE string,
+            p_b2_b TYPE string.
+SELECTION-SCREEN: BEGIN OF LINE.
+SELECTION-SCREEN: PUSHBUTTON 1(20) btn_b2 USER-COMMAND btn2 VISIBLE LENGTH 20.
+SELECTION-SCREEN: END OF LINE.
+SELECTION-SCREEN: END OF BLOCK b2.
+
+
+**********************************************************************
+* INICIO PROCESSAMENTO
+**********************************************************************
+INITIALIZATION.
+  DATA: lo_programa TYPE REF TO lcl_programa,
+        lo_bloco    TYPE REF TO lcl_bloco.
+  lo_programa = lcl_programa=>_get_instancia( ).
+
+  "Bloco B1
+  CREATE OBJECT lo_bloco TYPE lcl_bloco_b1.
+  SET HANDLER lo_bloco->ao_saida_de_tela FOR lo_programa.
+
+  "Bloco B2
+  CREATE OBJECT lo_bloco TYPE lcl_bloco_b2.
+*  SET HANDLER lo_bloco->ao_saida_de_tela FOR lo_programa.
+
+
+AT SELECTION-SCREEN OUTPUT.
+  DATA: lo_programa TYPE REF TO lcl_programa.
+  lo_programa = lcl_programa=>_get_instancia( ).
+  lo_programa->at_selection_screen_output( ).
+
+
+**********************************************************************
+* IMPLEMENTAÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_programa IMPLEMENTATION.
+  METHOD _get_instancia.
+    IF NOT _o_programa IS BOUND.
+      CREATE OBJECT _o_programa.
+    ENDIF.
+    result = _o_programa.
+  ENDMETHOD.
+
+  METHOD at_selection_screen_output.
+    RAISE EVENT saida_de_tela.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_bloco_b1 IMPLEMENTATION.
+  METHOD ao_saida_de_tela.
+    LOOP AT SCREEN.
+      IF screen-name = 'P_B1_A'.
+        screen-input = 0.
+      ENDIF.
+      MODIFY SCREEN.
+    ENDLOOP.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_bloco_b2 IMPLEMENTATION.
+  METHOD ao_saida_de_tela.
+    LOOP AT SCREEN.
+      IF screen-name = 'P_B2_B'.
+        screen-active = 0.
+      ENDIF.
+      MODIFY SCREEN.
+    ENDLOOP.
+
+    btn_b2 = 'Botão 2'.
+  ENDMETHOD.
+ENDCLASS.
