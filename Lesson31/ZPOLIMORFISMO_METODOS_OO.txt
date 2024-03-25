@@ -1,0 +1,177 @@
+REPORT zpolimorfismo_metodos_oo.
+
+**********************************************************************
+* DEFINIÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_material DEFINITION FINAL.
+  PUBLIC SECTION.
+    METHODS:
+      constructor IMPORTING is_mara TYPE mara,
+
+      set_s_mara IMPORTING iv_s_mara     TYPE mara,
+      get_s_mara RETURNING VALUE(return) TYPE mara,
+
+      exibir_material.
+
+  PRIVATE SECTION.
+    DATA:
+      s_mara TYPE mara.
+ENDCLASS.
+
+CLASS lcl_material_pesquisa DEFINITION FINAL.
+  PUBLIC SECTION.
+    METHODS:
+      pesquisar_material IMPORTING iv_matnr TYPE matnr OPTIONAL
+                                   iv_bismt TYPE bismt OPTIONAL
+                                   PREFERRED PARAMETER iv_matnr
+                         RETURNING VALUE(result) TYPE mara.
+
+  PRIVATE SECTION.
+    METHODS:
+      pesquisar_por_material IMPORTING iv_matnr TYPE matnr
+                             RETURNING VALUE(result) TYPE mara,
+
+      pesquisar_por_antigo IMPORTING iv_bismt TYPE bismt
+                           RETURNING VALUE(result) TYPE mara.
+ENDCLASS.
+
+CLASS lcl_programa DEFINITION FINAL.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      _at_selection_screen_output,
+      _start_of_selection.
+ENDCLASS.
+
+
+
+**********************************************************************
+* TELA DE SELEÇÃO
+**********************************************************************
+SELECTION-SCREEN: BEGIN OF BLOCK b01 WITH FRAME.
+SELECTION-SCREEN: BEGIN OF LINE.
+PARAMETERS: p_rb_new RADIOBUTTON GROUP grp1 USER-COMMAND usr1 DEFAULT 'X'.
+SELECTION-SCREEN: COMMENT 3(13) text-c01.
+PARAMETERS: p_matnr TYPE matnr.
+SELECTION-SCREEN: END OF LINE.
+
+SELECTION-SCREEN: BEGIN OF LINE.
+PARAMETERS: p_rb_old RADIOBUTTON GROUP grp1.
+SELECTION-SCREEN: COMMENT 3(13) text-c02.
+PARAMETERS: p_bismt TYPE bismt.
+SELECTION-SCREEN: END OF LINE.
+SELECTION-SCREEN: END OF BLOCK b01.
+
+
+**********************************************************************
+* INICIO PROCESSAMENTO
+**********************************************************************
+AT SELECTION-SCREEN OUTPUT.
+  lcl_programa=>_at_selection_screen_output( ).
+
+
+START-OF-SELECTION.
+  lcl_programa=>_start_of_selection( ).
+
+
+
+**********************************************************************
+* IMPLEMENTAÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_material IMPLEMENTATION.
+  METHOD set_s_mara.
+    me->s_mara = iv_s_mara.
+  ENDMETHOD.
+  METHOD get_s_mara.
+    return = me->s_mara.
+  ENDMETHOD.
+
+  METHOD constructor.
+    me->set_s_mara( is_mara ).
+  ENDMETHOD.
+
+  METHOD exibir_material.
+    WRITE:/ me->s_mara-matnr,
+            me->s_mara-ersda,
+            me->s_mara-ernam,
+            me->s_mara-laeda,
+            me->s_mara-aenam,
+            me->s_mara-vpsta,
+            me->s_mara-pstat,
+            me->s_mara-lvorm,
+            me->s_mara-mtart,
+            me->s_mara-mbrsh,
+            me->s_mara-matkl.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_programa IMPLEMENTATION.
+  METHOD _at_selection_screen_output.
+    LOOP AT SCREEN.
+      IF screen-name = 'P_BISMT'.
+        IF NOT p_rb_new IS INITIAL.
+          CLEAR p_bismt.
+          screen-input = 0.
+        ELSE.
+          screen-input = 1.
+        ENDIF.
+      ENDIF.
+
+      IF screen-name = 'P_MATNR'.
+        IF NOT p_rb_old IS INITIAL.
+          CLEAR p_matnr.
+          screen-input = 0.
+        ELSE.
+          screen-input = 1.
+        ENDIF.
+      ENDIF.
+
+      MODIFY SCREEN.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD _start_of_selection.
+    DATA: lo_pesquisa TYPE REF TO lcl_material_pesquisa,
+          lo_material TYPE REF TO lcl_material,
+
+          ls_mara     TYPE mara.
+
+    CREATE OBJECT lo_pesquisa.
+
+    ls_mara = lo_pesquisa->pesquisar_material( iv_matnr = p_matnr
+                                               iv_bismt = p_bismt ).
+
+    CREATE OBJECT lo_material
+      EXPORTING
+        is_mara = ls_mara.
+
+    lo_material->exibir_material( ).
+
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_material_pesquisa IMPLEMENTATION.
+  METHOD pesquisar_material.
+    IF NOT iv_matnr IS INITIAL.
+      result = me->pesquisar_por_material( iv_matnr ).
+    ENDIF.
+
+    IF NOT iv_bismt IS INITIAL.
+      result = me->pesquisar_por_antigo( iv_bismt ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD pesquisar_por_material.
+    SELECT SINGLE *
+      INTO result
+      FROM mara
+     WHERE matnr = iv_matnr.
+  ENDMETHOD.
+
+  METHOD pesquisar_por_antigo.
+    SELECT SINGLE *
+      INTO result
+      FROM mara
+     WHERE bismt = iv_bismt.
+  ENDMETHOD.
+ENDCLASS.

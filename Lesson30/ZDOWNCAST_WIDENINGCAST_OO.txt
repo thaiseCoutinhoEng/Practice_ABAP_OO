@@ -1,0 +1,269 @@
+REPORT zdowncast_wideningcast_oo.
+
+**********************************************************************
+* DEFINIÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_categoria_dados DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    METHODS:
+      constructor IMPORTING iv_nome_categoria TYPE typename,
+
+      set_v_nome_categoria IMPORTING iv_v_nome_categoria TYPE typename,
+      get_v_nome_categoria RETURNING VALUE(return)       TYPE typename,
+
+      exibir_conteudo ABSTRACT.
+
+    DATA:
+      v_nome_categoria TYPE typename READ-ONLY.
+ENDCLASS.
+
+CLASS lcl_estrutura DEFINITION INHERITING FROM lcl_categoria_dados FINAL.
+  PUBLIC SECTION.
+    METHODS:
+      constructor IMPORTING iv_nome_estrutura TYPE typename,
+
+      set_s_x030l_wa IMPORTING iv_s_x030l_wa TYPE x030l,
+      get_s_x030l_wa RETURNING VALUE(return) TYPE x030l,
+
+      set_t_dfies_tab IMPORTING iv_t_dfies_tab TYPE dfies_tab,
+      get_t_dfies_tab RETURNING VALUE(return)  TYPE dfies_tab,
+
+      exibir_conteudo REDEFINITION.
+
+  PRIVATE SECTION.
+    DATA:
+      s_x030l_wa  TYPE x030l,
+      t_dfies_tab TYPE dfies_tab.
+ENDCLASS.
+
+CLASS lcl_elemento_de_dados DEFINITION INHERITING FROM lcl_categoria_dados FINAL.
+  PUBLIC SECTION.
+    METHODS:
+      constructor IMPORTING iv_nome_elemento TYPE typename,
+
+      set_v_gotstate IMPORTING iv_v_gotstate TYPE ddgotstate,
+      get_v_gotstate RETURNING VALUE(return) TYPE ddgotstate,
+
+      set_s_dd04v_wa IMPORTING iv_s_dd04v_wa TYPE dd04v,
+      get_s_dd04v_wa RETURNING VALUE(return) TYPE dd04v,
+
+      set_s_tpara_wa IMPORTING iv_s_tpara_wa TYPE tpara,
+      get_s_tpara_wa RETURNING VALUE(return) TYPE tpara,
+
+      exibir_conteudo REDEFINITION.
+
+  PRIVATE SECTION.
+    DATA:
+      v_gotstate TYPE ddgotstate,
+      s_dd04v_wa TYPE dd04v,
+      s_tpara_wa TYPE tpara.
+ENDCLASS.
+
+CLASS lcl_dicionario_de_dados DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+      adicionar_categoria IMPORTING io_categoria_dados TYPE REF TO lcl_categoria_dados,
+
+      resgatar_categoria IMPORTING iv_nome       TYPE typename
+                         RETURNING VALUE(result) TYPE REF TO lcl_categoria_dados,
+
+      exibir_conteudos.
+
+  PRIVATE SECTION.
+    DATA:
+      t_categorias TYPE TABLE OF REF TO lcl_categoria_dados.
+ENDCLASS.
+
+
+
+**********************************************************************
+* INICIO PROCESSAMENTO
+**********************************************************************
+START-OF-SELECTION.
+  DATA: lo_dicionario TYPE REF TO lcl_dicionario_de_dados,
+        lo_categoria  TYPE REF TO lcl_categoria_dados,
+        lo_elemento   TYPE REF TO lcl_elemento_de_dados,
+        lo_estrutura  TYPE REF TO lcl_estrutura.
+
+  "Dicionario de Dados
+  CREATE OBJECT lo_dicionario.
+
+  "Elementos de Dados
+  CREATE OBJECT lo_elemento EXPORTING iv_nome_elemento = 'MATNR'.
+  lo_dicionario->adicionar_categoria( lo_elemento ).
+
+  CREATE OBJECT lo_elemento EXPORTING iv_nome_elemento = 'MANDT'.
+  lo_dicionario->adicionar_categoria( lo_elemento ).
+
+  CREATE OBJECT lo_elemento EXPORTING iv_nome_elemento = 'POSNR_D'.
+  lo_dicionario->adicionar_categoria( lo_elemento ).
+
+
+  "Estrutura
+  CREATE OBJECT lo_estrutura EXPORTING iv_nome_estrutura = 'SFLIGHT'.
+  lo_dicionario->adicionar_categoria( lo_estrutura ).
+
+  CREATE OBJECT lo_estrutura EXPORTING iv_nome_estrutura = 'SSCRFIELDS'.
+  lo_dicionario->adicionar_categoria( lo_estrutura ).
+
+  CREATE OBJECT lo_estrutura EXPORTING iv_nome_estrutura = 'BSEG'.
+  lo_dicionario->adicionar_categoria( lo_estrutura ).
+
+
+  "Exibir Conteudos
+*  lo_dicionario->exibir_conteudos( ).
+
+  lo_categoria = lo_dicionario->resgatar_categoria( 'POSNR_D' ).
+
+  lo_elemento ?= lo_categoria.
+
+*  MOVE lo_categoria ?TO lo_elemento.
+
+  TRY .
+      lo_estrutura ?= lo_categoria.
+
+    CATCH  cx_sy_move_cast_error.
+      WRITE:/ 'Erro no Downcast'.
+  ENDTRY.
+
+
+
+
+
+**********************************************************************
+* IMPLEMENTAÇÃO DE CLASSES
+**********************************************************************
+CLASS lcl_categoria_dados IMPLEMENTATION.
+  METHOD constructor.
+    me->set_v_nome_categoria( iv_nome_categoria ).
+  ENDMETHOD.
+
+  METHOD set_v_nome_categoria.
+    me->v_nome_categoria = iv_v_nome_categoria.
+  ENDMETHOD.
+  METHOD get_v_nome_categoria.
+    return = me->v_nome_categoria.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_elemento_de_dados IMPLEMENTATION.
+  "$. Region Getters e Setters
+  METHOD set_s_tpara_wa.
+    me->s_tpara_wa = iv_s_tpara_wa.
+  ENDMETHOD.
+  METHOD get_s_tpara_wa.
+    return = me->s_tpara_wa.
+  ENDMETHOD.
+
+  METHOD set_s_dd04v_wa.
+    me->s_dd04v_wa = iv_s_dd04v_wa.
+  ENDMETHOD.
+  METHOD get_s_dd04v_wa.
+    return = me->s_dd04v_wa.
+  ENDMETHOD.
+
+  METHOD set_v_gotstate.
+    me->v_gotstate = iv_v_gotstate.
+  ENDMETHOD.
+  METHOD get_v_gotstate.
+    return = me->v_gotstate.
+  ENDMETHOD.
+  "$. Endregion Getters e Setters
+
+  METHOD constructor.
+    super->constructor( iv_nome_elemento ).
+
+    CALL FUNCTION 'DDIF_DTEL_GET'
+      EXPORTING
+        name          = iv_nome_elemento
+        langu         = sy-langu
+      IMPORTING
+        gotstate      = me->v_gotstate
+        dd04v_wa      = me->s_dd04v_wa
+        tpara_wa      = me->s_tpara_wa
+      EXCEPTIONS
+        illegal_input = 1
+        OTHERS        = 2.
+
+    IF sy-subrc <> 0.
+      "...
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD exibir_conteudo.
+    WRITE:/ 'Elemento de Dados:', me->get_v_nome_categoria( ),
+          / 'Características:',
+          / me->s_dd04v_wa.
+    SKIP.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_estrutura IMPLEMENTATION.
+  "$. Region Getters e Setters
+  METHOD set_t_dfies_tab.
+    me->t_dfies_tab = iv_t_dfies_tab.
+  ENDMETHOD.
+  METHOD get_t_dfies_tab.
+    return = me->t_dfies_tab.
+  ENDMETHOD.
+
+  METHOD set_s_x030l_wa.
+    me->s_x030l_wa = iv_s_x030l_wa.
+  ENDMETHOD.
+  METHOD get_s_x030l_wa.
+    return = me->s_x030l_wa.
+  ENDMETHOD.
+  "$. Endregion Getters e Setters
+
+  METHOD constructor.
+    super->constructor( iv_nome_estrutura ).
+
+    CALL FUNCTION 'DDIF_FIELDINFO_GET'
+      EXPORTING
+        tabname        = iv_nome_estrutura
+      IMPORTING
+        x030l_wa       = me->s_x030l_wa
+      TABLES
+        dfies_tab      = me->t_dfies_tab
+      EXCEPTIONS
+        not_found      = 1
+        internal_error = 2
+        OTHERS         = 3.
+
+    IF sy-subrc <> 0.
+      "...
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD exibir_conteudo.
+    DATA: ls_dfies LIKE LINE OF me->t_dfies_tab.
+
+    WRITE:/ 'Estrutura:', me->get_v_nome_categoria( ),
+          / 'Campos:'.
+
+    LOOP AT me->t_dfies_tab INTO ls_dfies.
+      WRITE:/ ls_dfies.
+    ENDLOOP.
+    SKIP.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_dicionario_de_dados IMPLEMENTATION.
+  METHOD adicionar_categoria.
+    APPEND io_categoria_dados TO me->t_categorias.
+  ENDMETHOD.
+
+  METHOD exibir_conteudos.
+    DATA: lo_categoria TYPE REF TO lcl_categoria_dados.
+
+    LOOP AT me->t_categorias INTO lo_categoria.
+      lo_categoria->exibir_conteudo( ).
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD resgatar_categoria.
+
+    READ TABLE me->t_categorias INTO result WITH KEY table_line->v_nome_categoria = iv_nome.
+
+  ENDMETHOD.
+ENDCLASS.
